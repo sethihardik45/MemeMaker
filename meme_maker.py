@@ -7,6 +7,7 @@ import random
 import os
 import requests
 import base64
+import time
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
@@ -188,6 +189,10 @@ else:
             print(f"Instagram container creation failed: {container_result}")
         else:
             print(f"Instagram media container created: {creation_id}")
+
+            # Wait for container to finish processing
+            print("Waiting for Instagram to process the container...")
+            time.sleep(15)
 
             # Step 2: Publish the container
             publish_response = requests.post(
