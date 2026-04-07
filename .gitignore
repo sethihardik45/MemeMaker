@@ -1,0 +1,8 @@
+*.png
+*.jpeg
+*.jpg
+cron.log
+.claude/
+.DS_Store
+__pycache__/
+*.pyc
