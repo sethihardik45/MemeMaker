@@ -154,31 +154,50 @@ while quality >= 10:
     quality -= 5
 print(f"final.jpeg saved (quality={quality}, size={os.path.getsize('final.jpeg') / 1024:.1f} KB)")
 
-# --- Upload to imgbb ---
-print("\n--- Uploading to imgbb ---")
+# --- Upload image to GitHub raw URL ---
+print("\n--- Uploading image to GitHub ---")
 image_url = None
 try:
+    github_token = os.environ.get("GITHUB_TOKEN", "")
     with open("final.jpeg", "rb") as f:
-        image_data = base64.b64encode(f.read()).decode("utf-8")
-    imgbb_response = requests.post(
-        "https://api.imgbb.com/1/upload",
-        data={
-            "key": IMGBB_API_KEY,
-            "image": image_data,
+        image_b64 = base64.b64encode(f.read()).decode("utf-8")
+
+    # Check if file already exists to get its sha
+    sha = None
+    get_response = requests.get(
+        "https://api.github.com/repos/sethihardik45/MemeMaker/contents/latest.jpeg?ref=images",
+        headers={
+            "Authorization": f"Bearer {github_token}",
+            "Accept": "application/vnd.github+json",
         },
         timeout=60,
     )
-    imgbb_response.raise_for_status()
-    imgbb_result = imgbb_response.json()
-    if imgbb_result.get("success"):
-        image_url = imgbb_result["data"]["image"]["url"]
-        print(f"Image uploaded to imgbb: {image_url}")
-    else:
-        print(f"imgbb upload failed: {imgbb_result}")
-except requests.exceptions.RequestException as e:
-    print(f"imgbb upload error: {e}")
+    if get_response.status_code == 200:
+        sha = get_response.json()["sha"]
+
+    upload_data = {
+        "message": "Update latest meme",
+        "content": image_b64,
+        "branch": "images",
+    }
+    if sha:
+        upload_data["sha"] = sha
+
+    upload_response = requests.put(
+        "https://api.github.com/repos/sethihardik45/MemeMaker/contents/latest.jpeg",
+        headers={
+            "Authorization": f"Bearer {github_token}",
+            "Accept": "application/vnd.github+json",
+        },
+        json=upload_data,
+        timeout=60,
+    )
+    upload_response.raise_for_status()
+    # Use raw.githubusercontent.com URL with cache-busting timestamp
+    image_url = f"https://raw.githubusercontent.com/sethihardik45/MemeMaker/images/latest.jpeg?t={int(time.time())}"
+    print(f"Image uploaded to GitHub: {image_url}")
 except Exception as e:
-    print(f"Unexpected error during imgbb upload: {e}")
+    print(f"GitHub upload failed: {e}")
 
 # --- Post to Instagram ---
 print("\n--- Posting to Instagram ---")
