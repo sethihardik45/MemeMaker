@@ -34,17 +34,31 @@ client = genai.Client(api_key=GEMINI_API_KEY)
 # Fetch latest news from the internet using Gemini
 topic = random.choice(['politics', 'tech', 'cricket', 'Bollywood', 'space', 'geopolitics'])
 print(f"Topic: {topic}")
-news_response = client.models.generate_content(
-    model="gemini-2.5-flash",
-    contents=f"Give me one latest breaking news from today about {topic}. Pick something unique and fresh, not a commonly repeated story. Return ONLY valid JSON with two keys: \"title\" (a short headline, around 6-10 words) and \"caption\" (a brief summary, around 25-35 words). No emojis. No markdown, no code fences, just raw JSON.",
-    config=types.GenerateContentConfig(
-        tools=[types.Tool(google_search=types.GoogleSearch())],
-    ),
-)
-news_text = news_response.text.strip()
-if news_text.startswith("```"):
-    news_text = news_text.split("\n", 1)[1].rsplit("```", 1)[0].strip()
-news = json.loads(news_text)
+
+news = None
+for news_attempt in range(3):
+    try:
+        news_response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=f"Give me one latest breaking news from today about {topic}. Pick something unique and fresh, not a commonly repeated story. Return ONLY valid JSON with two keys: \"title\" (a short headline, around 6-10 words) and \"caption\" (a brief summary, around 25-35 words). No emojis. No markdown, no code fences, just raw JSON.",
+            config=types.GenerateContentConfig(
+                tools=[types.Tool(google_search=types.GoogleSearch())],
+            ),
+        )
+        news_text = news_response.text.strip()
+        if news_text.startswith("```"):
+            news_text = news_text.split("\n", 1)[1].rsplit("```", 1)[0].strip()
+        news = json.loads(news_text)
+        break
+    except (json.JSONDecodeError, Exception) as e:
+        print(f"News fetch attempt {news_attempt + 1} failed: {e}")
+        if news_attempt < 2:
+            print("Retrying...")
+
+if news is None:
+    print("All news fetch attempts failed. Exiting.")
+    exit(1)
+
 title = news["title"]
 caption = news["caption"]
 print(f"Title: {title}")
