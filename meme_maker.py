@@ -45,6 +45,8 @@ for news_attempt in range(3):
                 tools=[types.Tool(google_search=types.GoogleSearch())],
             ),
         )
+        if news_response.text is None:
+            raise ValueError("Gemini returned no text content")
         news_text = news_response.text.strip()
         if news_text.startswith("```"):
             news_text = news_text.split("\n", 1)[1].rsplit("```", 1)[0].strip()
@@ -102,6 +104,9 @@ for attempt in range(3):
         model="gemini-2.5-flash",
         contents=f"Rewrite the following news headline into a safe, non-violent image generation prompt suitable for an AI image generator. Focus on symbols, landmarks, diplomacy, or scenery. Return ONLY the prompt text, nothing else.\n\nHeadline: {title}",
     )
+    if safe_prompt_response.text is None:
+        print(f"Safe prompt attempt {attempt + 1} returned no text, retrying...")
+        continue
     safe_prompt = safe_prompt_response.text.strip()
     print(f"Image prompt (attempt {attempt + 1}): {safe_prompt}")
 
