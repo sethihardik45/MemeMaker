@@ -171,9 +171,7 @@ try:
     imgbb_response.raise_for_status()
     imgbb_result = imgbb_response.json()
     if imgbb_result.get("success"):
-        print(f"imgbb response data keys: {list(imgbb_result['data'].keys())}")
-        print(f"imgbb image keys: {list(imgbb_result['data'].get('image', {}).keys())}")
-        image_url = imgbb_result["data"].get("display_url") or imgbb_result["data"].get("image", {}).get("url") or imgbb_result["data"]["url"]
+        image_url = imgbb_result["data"]["image"]["url"]
         print(f"Image uploaded to imgbb: {image_url}")
     else:
         print(f"imgbb upload failed: {imgbb_result}")
@@ -188,6 +186,7 @@ if image_url is None:
     print("Skipping Instagram post: no image URL available (imgbb upload failed).")
 else:
     try:
+        print(f"Sending image_url to Instagram: {image_url}")
         # Step 1: Create media container
         container_response = requests.post(
             f"https://graph.facebook.com/v25.0/{INSTAGRAM_ACCOUNT_ID}/media",
