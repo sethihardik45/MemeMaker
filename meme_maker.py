@@ -36,6 +36,8 @@ topic = random.choice(['politics', 'tech', 'cricket', 'Bollywood', 'space', 'geo
 print(f"Topic: {topic}")
 
 news = None
+
+# Attempt 1-3: With Google Search grounding
 for news_attempt in range(3):
     try:
         news_response = client.models.generate_content(
@@ -46,6 +48,7 @@ for news_attempt in range(3):
             ),
         )
         if news_response.text is None:
+            print(f"[DEBUG] Response candidates: {news_response.candidates}")
             raise ValueError("Gemini returned no text content")
         news_text = news_response.text.strip()
         if news_text.startswith("```"):
@@ -56,6 +59,30 @@ for news_attempt in range(3):
         print(f"News fetch attempt {news_attempt + 1} failed: {e}")
         if news_attempt < 2:
             print("Retrying...")
+            time.sleep(2)
+
+# Attempt 4-6: Fallback WITHOUT Google Search (uses model's training data)
+if news is None:
+    print("Google Search grounding failed. Trying without grounding...")
+    for news_attempt in range(3):
+        try:
+            news_response = client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=f"Give me one recent news headline about {topic}. Pick something unique. Return ONLY valid JSON with two keys: \"title\" (a short headline, around 6-10 words) and \"caption\" (a brief summary, around 25-35 words). No emojis. No markdown, no code fences, just raw JSON.",
+            )
+            if news_response.text is None:
+                print(f"[DEBUG] Fallback response candidates: {news_response.candidates}")
+                raise ValueError("Gemini returned no text content (no grounding)")
+            news_text = news_response.text.strip()
+            if news_text.startswith("```"):
+                news_text = news_text.split("\n", 1)[1].rsplit("```", 1)[0].strip()
+            news = json.loads(news_text)
+            break
+        except (json.JSONDecodeError, Exception) as e:
+            print(f"Fallback news attempt {news_attempt + 1} failed: {e}")
+            if news_attempt < 2:
+                print("Retrying...")
+                time.sleep(2)
 
 if news is None:
     print("All news fetch attempts failed. Exiting.")
