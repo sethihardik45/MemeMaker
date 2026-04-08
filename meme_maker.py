@@ -171,7 +171,7 @@ try:
     imgbb_response.raise_for_status()
     imgbb_result = imgbb_response.json()
     if imgbb_result.get("success"):
-        image_url = imgbb_result["data"]["url"]
+        image_url = imgbb_result["data"]["display_url"]
         print(f"Image uploaded to imgbb: {image_url}")
     else:
         print(f"imgbb upload failed: {imgbb_result}")
