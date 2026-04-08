@@ -224,7 +224,10 @@ else:
                 print(f"Successfully posted to Instagram! Post ID: {post_id}")
             else:
                 print(f"Instagram publish response: {publish_result}")
-    except requests.exceptions.RequestException as e:
+    except requests.exceptions.HTTPError as e:
         print(f"Instagram API error: {e}")
+        print(f"Response body: {e.response.text}")
+    except requests.exceptions.RequestException as e:
+        print(f"Instagram request error: {e}")
     except Exception as e:
         print(f"Unexpected error during Instagram posting: {e}")
